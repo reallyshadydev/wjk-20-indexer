@@ -3,6 +3,7 @@ use nintypes::common::inscriptions::Outpoint;
 use super::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[allow(dead_code)]
 pub struct AddressTokenBalance {
     pub tick: OriginalTokenTickRest,
     pub balance: Fixed128,

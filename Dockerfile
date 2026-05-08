@@ -39,8 +39,8 @@ RUN apt update -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN groupadd --system --gid 1001 appuser \
-  && useradd --system --uid 1001 --gid appuser --home /home/appuser --shell /usr/sbin/nologin appuser \
+RUN groupadd --gid 1001 appuser \
+  && useradd --uid 1001 --gid appuser --home /home/appuser --shell /usr/sbin/nologin appuser \
   && mkdir -p /home/appuser/.cache \
   && chown -R 1001:1001 /home/appuser
 

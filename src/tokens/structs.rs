@@ -1,6 +1,7 @@
 use super::*;
 
 #[derive(Serialize, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct TokenBalanceRest {
     pub tick: OriginalTokenTickRest,
     pub balance: Fixed128,
@@ -10,6 +11,7 @@ pub struct TokenBalanceRest {
 }
 
 #[derive(Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct TokenProtoRest {
     pub genesis: InscriptionId,
     pub tick: OriginalTokenTickRest,
@@ -29,6 +31,7 @@ pub struct AddressOutPoint {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub enum Brc4ActionErr {
     NotDeployed,
     AlreadyDeployed,
@@ -54,6 +57,7 @@ pub enum Brc4ParseErr {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub enum Brc4Error {
     Action(Brc4ActionErr),
     Parse(Brc4ParseErr),

@@ -3,6 +3,7 @@ use super::*;
 use serde::de::Error;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
+#[allow(dead_code)]
 pub struct Protocol(pub Brc4Value, pub Option<Brc4ActionErr>);
 
 fn bel_20_validate<'de, D>(val: &str) -> Result<Fixed128, D::Error>
@@ -186,6 +187,7 @@ impl TransferProto {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[allow(dead_code)]
 pub enum Brc4Value {
     Mint { tick: OriginalTokenTick, amt: Fixed128 },
     Transfer { tick: OriginalTokenTick, amt: Fixed128 },
