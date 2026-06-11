@@ -29,6 +29,8 @@ impl Server {
             (Blockchain::Dogecoin, Network::Testnet) => "dogecoin-testnet",
             (Blockchain::Pepecoin, Network::Bellscoin) => "pepecoin",
             (Blockchain::Pepecoin, Network::Testnet) => "pepecoin-testnet",
+            (Blockchain::Wojakcoin, Network::Bellscoin) => "wojakcoin",
+            (Blockchain::Wojakcoin, Network::Testnet) => "wojakcoin-testnet",
             _ => "bellscoin",
         }
         .to_string();

@@ -63,9 +63,17 @@ pub enum Brc4Error {
     Parse(Brc4ParseErr),
 }
 
+/// Token tick bytes (4 for BEL/DRC/PRC/LTC, up to 8 for WJK-20 e.g. "wojak").
+pub const TICK_STORAGE_LEN: usize = 8;
+
+fn trim_tick_bytes(bytes: &[u8; TICK_STORAGE_LEN]) -> &[u8] {
+    let end = bytes.iter().rposition(|b| *b != 0).map(|i| i + 1).unwrap_or(0);
+    &bytes[..end]
+}
+
 /// Token tick in the original case (same as in the deploy)
 #[derive(Clone, Copy, Hash, Eq, PartialEq)]
-pub struct OriginalTokenTickRest([u8; 4]);
+pub struct OriginalTokenTickRest([u8; TICK_STORAGE_LEN]);
 
 impl schemars::JsonSchema for OriginalTokenTickRest {
     fn schema_name() -> Cow<'static, str> {
@@ -85,7 +93,7 @@ impl Serialize for OriginalTokenTickRest {
     where
         S: Serializer,
     {
-        let str = String::from_utf8_lossy(&self.0);
+        let str = String::from_utf8_lossy(trim_tick_bytes(&self.0));
         serializer.serialize_str(&str)
     }
 }
@@ -95,17 +103,20 @@ impl<'de> Deserialize<'de> for OriginalTokenTickRest {
     where
         D: Deserializer<'de>,
     {
-        let bytes: [u8; 4] = String::deserialize(deserializer)?
-            .as_bytes()
-            .try_into()
-            .map_err(|_| serde::de::Error::custom("Invalid tick length"))?;
+        let s = String::deserialize(deserializer)?;
+        let b = s.as_bytes();
+        if b.is_empty() || b.len() > TICK_STORAGE_LEN {
+            return Err(serde::de::Error::custom("Invalid tick length"));
+        }
+        let mut bytes = [0u8; TICK_STORAGE_LEN];
+        bytes[..b.len()].copy_from_slice(b);
         Ok(Self(bytes))
     }
 }
 
 impl Display for OriginalTokenTickRest {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        write!(f, "{}", String::from_utf8_lossy(&self.0))
+        write!(f, "{}", String::from_utf8_lossy(trim_tick_bytes(&self.0)))
     }
 }
 
@@ -128,13 +139,18 @@ impl From<OriginalTokenTick> for OriginalTokenTickRest {
 }
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Default, Serialize, Deserialize)]
-pub struct OriginalTokenTick(pub [u8; 4]);
+pub struct OriginalTokenTick(pub [u8; TICK_STORAGE_LEN]);
 
 impl TryFrom<Vec<u8>> for OriginalTokenTick {
     type Error = anyhow::Error;
 
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
-        Ok(Self(v.try_into().map_err(|_| anyhow::Error::msg("Invalid byte length"))?))
+        if v.is_empty() || v.len() > TICK_STORAGE_LEN {
+            anyhow::bail!("Invalid tick length");
+        }
+        let mut tick = [0u8; TICK_STORAGE_LEN];
+        tick[..v.len()].copy_from_slice(&v);
+        Ok(Self(tick))
     }
 }
 
@@ -144,8 +160,8 @@ impl From<OriginalTokenTickRest> for OriginalTokenTick {
     }
 }
 
-impl From<[u8; 4]> for OriginalTokenTick {
-    fn from(v: [u8; 4]) -> Self {
+impl From<[u8; TICK_STORAGE_LEN]> for OriginalTokenTick {
+    fn from(v: [u8; TICK_STORAGE_LEN]) -> Self {
         Self(v)
     }
 }
@@ -156,25 +172,25 @@ impl std::fmt::Debug for OriginalTokenTick {
 }
 impl Display for OriginalTokenTick {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        write!(f, "{}", String::from_utf8_lossy(&self.0))
+        write!(f, "{}", String::from_utf8_lossy(trim_tick_bytes(&self.0)))
     }
 }
 impl FromStr for OriginalTokenTick {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(s.as_bytes().try_into().anyhow_with("Invalid tick")?))
+        Self::try_from(s.as_bytes().to_vec())
     }
 }
 impl From<OriginalTokenTick> for LowerCaseTokenTick {
     fn from(value: OriginalTokenTick) -> Self {
-        LowerCaseTokenTick::from(value.0)
+        LowerCaseTokenTick::from(trim_tick_bytes(&value.0))
     }
 }
 
 impl From<&OriginalTokenTick> for LowerCaseTokenTick {
     fn from(value: &OriginalTokenTick) -> Self {
-        LowerCaseTokenTick::from(&value.0)
+        LowerCaseTokenTick::from(trim_tick_bytes(&value.0))
     }
 }
 

@@ -83,6 +83,18 @@ pub struct TokenCache {
     pub valid_transfers: BTreeMap<Location, (FullHash, TransferProtoDB)>,
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_wjk20_deploy_json() {
+        let body = br#"{"p":"wjk-20","op":"deploy","tick":"wojak","max":"44000000","lim":"1000"}"#;
+        let parsed = TokenCache::try_parse("text/plain;charset=utf-8", body).unwrap();
+        assert!(matches!(parsed, Brc4::Deploy { .. }));
+    }
+}
+
 impl TokenCache {
     pub fn load(prevouts: &HashMap<OutPoint, TxPrevout>, db: &DB) -> Self {
         let mut token_cache = Self::default();

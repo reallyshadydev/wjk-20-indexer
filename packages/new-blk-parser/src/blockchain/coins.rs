@@ -115,6 +115,28 @@ impl Coin for PepecoinTestnet {
     };
 }
 
+pub struct Wojakcoin;
+impl Coin for Wojakcoin {
+    const NAME: &'static str = "Wojakcoin";
+    const CONFIG: EncoderConfig = EncoderConfig {
+        // WojakCoin mainnet base58 version bytes (see ord-wojakcoin chainparams):
+        // P2PKH = 0x49 ('W'), P2SH = 0x05. Pre-segwit: bech32 unused.
+        pubkey_address: 73,
+        script_address: 5,
+        bech32: "wjk",
+    };
+}
+
+pub struct WojakcoinTestnet;
+impl Coin for WojakcoinTestnet {
+    const NAME: &'static str = "Wojakcoin Testnet";
+    const CONFIG: EncoderConfig = EncoderConfig {
+        pubkey_address: 113,
+        script_address: 196,
+        bech32: "twjk",
+    };
+}
+
 #[derive(Clone, Copy)]
 // Holds the selected coin type information
 pub struct CoinType {
@@ -157,6 +179,8 @@ impl FromStr for CoinType {
             "bellscoin-testnet" => Ok(CoinType::from(BellscoinTestnet)),
             "pepecoin" => Ok(CoinType::from(Pepecoin)),
             "pepecoin-testnet" => Ok(CoinType::from(PepecoinTestnet)),
+            "wojakcoin" => Ok(CoinType::from(Wojakcoin)),
+            "wojakcoin-testnet" => Ok(CoinType::from(WojakcoinTestnet)),
             n => anyhow::bail!("There is no implementation for `{}`!", n),
         }
     }

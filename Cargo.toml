@@ -18,7 +18,7 @@ bellscoin = "0.30.8"
 
 rocksdb-wrapper = { path = "./packages/rocksdb-wrapper" }
 tokio = { version = "1.43.1", features = ["full"] }
-tower-http = { version = "0.6.5", features = ["compression-full"] }
+tower-http = { version = "0.6.5", features = ["compression-full", "cors"] }
 itertools = "0.14.0"
 rayon = "1.10.0"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

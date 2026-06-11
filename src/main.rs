@@ -70,6 +70,8 @@ define_static! {
     JUBILEE_HEIGHT: usize = match (*NETWORK, *BLOCKCHAIN) {
         (Network::Bellscoin, Blockchain::Bellscoin) => 133_000,
         (_, Blockchain::Dogecoin) => usize::MAX,
+        // WojakCoin: multi-input inscription scanning active from genesis.
+        (_, Blockchain::Wojakcoin) => 0,
         _ => 0,
     };
     // first token block height
@@ -79,6 +81,8 @@ define_static! {
         (Network::Testnet, Blockchain::Dogecoin) => 4_260_001,
         (Network::Bellscoin, Blockchain::Litecoin) => 2_424_429,
         (Network::Testnet, Blockchain::Litecoin) => 2_669_127,
+        // WojakCoin: index from genesis (prevouts required for mid-chain spends).
+        (_, Blockchain::Wojakcoin) => 1,
         _ => 0,
     };
     SERVER_URL: String =

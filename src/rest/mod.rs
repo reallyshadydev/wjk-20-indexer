@@ -22,6 +22,7 @@ use nintypes::common::inscriptions::Outpoint;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tower_http::compression::CompressionLayer;
+use tower_http::cors::{Any, CorsLayer};
 use validator::Validate;
 
 mod address;
@@ -90,6 +91,12 @@ pub async fn run_rest(server: Arc<Server>) -> anyhow::Result<()> {
             .route("/events", axum::routing::post(history::subscribe))
             .layer(Extension(Arc::new(api)))
             .layer(CompressionLayer::new())
+            .layer(
+                CorsLayer::new()
+                    .allow_origin(Any)
+                    .allow_methods(Any)
+                    .allow_headers(Any),
+            )
             .with_state(server),
     )
     .with_graceful_shutdown(token.clone().cancelled())

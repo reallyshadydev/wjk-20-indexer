@@ -114,7 +114,7 @@ impl Client {
     }
 
     pub fn get_block(&self, hash: &sha256d::Hash) -> Result<Block> {
-        let block_hex: String = self.call("getblock", &[serde_json::to_value(hash)?, 0.into()])?;
+        let block_hex: String = self.call("getblock", &[serde_json::to_value(hash)?, false.into()])?;
         let block_bytes = hex::decode(block_hex)?;
         let mut block_cursor = std::io::Cursor::new(block_bytes);
         block_cursor
@@ -123,7 +123,7 @@ impl Client {
     }
 
     pub fn get_block_info(&self, hash: &sha256d::Hash) -> Result<GetBlockResult> {
-        self.call("getblock", &[serde_json::to_value(hash)?, 1.into()])
+        self.call("getblock", &[serde_json::to_value(hash)?, true.into()])
     }
 
     /// Get block hash at a given height
@@ -143,7 +143,8 @@ pub struct GetBlockResult {
     pub confirmations: i32,
     pub size: usize,
     pub strippedsize: Option<usize>,
-    pub weight: usize,
+    /// Absent on pre-segwit chains (e.g. WojakCoin).
+    pub weight: Option<usize>,
     pub height: usize,
     pub version: i32,
     pub time: usize,

@@ -30,7 +30,7 @@ pub async fn address_tokens_tick(
                 token: token.unwrap_or_default(),
             }..=&AddressToken {
                 address: scripthash,
-                token: [u8::MAX; 4].into(),
+                token: [u8::MAX; 8].into(),
             },
             false,
         )
@@ -137,7 +137,7 @@ pub async fn address_tokens(
                 token: token.unwrap_or_default(),
             }..=&AddressToken {
                 address: scripthash,
-                token: [u8::MAX; 4].into(),
+                token: [u8::MAX; 8].into(),
             },
             false,
         )

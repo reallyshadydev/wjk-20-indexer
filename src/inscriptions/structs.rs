@@ -328,3 +328,69 @@ pub struct Part {
     pub is_tapscript: bool,
     pub script_buffer: Vec<u8>,
 }
+
+#[cfg(test)]
+mod tests {
+    use bitcoin_hashes::hex::FromHex;
+
+    use super::*;
+
+    #[test]
+    #[ignore = "requires local WojakCoin RPC"]
+    fn rpc_block_parses_wjk20_deploy() {
+        dotenv::dotenv().ok();
+        let url = std::env::var("RPC_URL").expect("RPC_URL");
+        let user = std::env::var("RPC_USER").expect("RPC_USER");
+        let pass = std::env::var("RPC_PASS").expect("RPC_PASS");
+        let coin = nint_blk::CoinType::from_str("wojakcoin").unwrap();
+        let token = dutils::wait_token::WaitToken::default();
+        let client = nint_blk::Client::new(&url, nint_blk::Auth::UserPass(user, pass), coin, token).unwrap();
+        let hash = client.get_block_hash(128_253).unwrap();
+        let block = client.get_block(&hash).unwrap();
+        let deploy = "0637bfaf62413b39ec633f4c3e48235c55ffecbf6e2d149ab7d5b3c083cda9db";
+        let tx = block
+            .txs
+            .iter()
+            .find(|t| format!("{}", t.hash) == deploy || t.hash.to_string() == deploy)
+            .expect("deploy tx in block");
+        let ss = &tx.value.inputs[0].script_sig;
+        assert!(ss.len() > 50, "script_sig empty? len={}", ss.len());
+        let parsed = Inscription::from_parts(
+            &[Part {
+                is_tapscript: false,
+                script_buffer: ss.clone(),
+            }],
+            0,
+        );
+        assert!(matches!(parsed, ParsedInscription::Single(_)), "got {:?}", parsed);
+    }
+
+    #[test]
+    fn parses_wojak_p2sh_deploy_scriptsig() {
+        let ss: Vec<u8> = Vec::<u8>::from_hex(
+            "036f72645118746578742f706c61696e3b636861727365743d7574662d380049\
+             7b2270223a22776a6b2d3230222c226f70223a226465706c6f79222c227469636b223a22776f6a616b\
+             222c226d6178223a223434303030303030222c226c696d223a2231303030227d\
+             47304402204151f0172180eb5bf12b73c56c0afb217056e80f823b001813a29bb00ed3a6cc\
+             02207d02ed869ebf285e804c950499523733fec038fed02b649098893945ec58de1e01\
+             292103a7272ad13833b7bd463b216dab6863385d00dc8b31e7dad3b98d1e98e4947e6bad757575757551",
+        )
+        .unwrap();
+        let parsed = Inscription::from_parts(
+            &[Part {
+                is_tapscript: false,
+                script_buffer: ss,
+            }],
+            0,
+        );
+        match parsed {
+            ParsedInscription::Single(ins) => {
+                let ct = ins.content_type().unwrap();
+                assert_eq!(ct, "text/plain;charset=utf-8");
+                let body = String::from_utf8(ins.into_body().unwrap()).unwrap();
+                assert!(body.contains("\"op\":\"deploy\""));
+            }
+            other => panic!("expected Single, got {:?}", other),
+        }
+    }
+}
