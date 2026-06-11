@@ -1,5 +1,26 @@
 use super::*;
 
+fn address_token_transfers(
+    db: &DB,
+    scripthash: FullHash,
+    tick: OriginalTokenTick,
+    offset: Option<Outpoint>,
+    limit: usize,
+) -> Vec<TokenTransfer> {
+    let (from, to) = AddressLocation::search(scripthash, offset.map(Into::into)).into_inner();
+
+    db.address_location_to_transfer
+        .range(&from..&to, false)
+        .filter(|(_, v)| v.tick == tick)
+        .map(|(k, v)| TokenTransfer {
+            amount: v.amt,
+            outpoint: k.location.outpoint.into(),
+        })
+        .skip(offset.is_some() as usize)
+        .take(limit)
+        .collect_vec()
+}
+
 pub async fn address_tokens_tick(
     url: Uri,
     State(state): State<Arc<Server>>,
@@ -69,32 +90,19 @@ pub async fn address_token_balance(
         .bad_request_from_error()?
         .into();
 
-    let token: LowerCaseTokenTick = tick.into();
+    let token: OriginalTokenTick = tick.into();
 
-    let deploy_proto = state.db.token_to_meta.get(&token).not_found("Token not found")?;
-
-    let tick = deploy_proto.proto.tick;
-
-    let balance = state.db.address_token_to_balance.get(AddressToken { address: scripthash, token: tick }).unwrap_or_default();
-
-    let (from, to) = AddressLocation::search(scripthash, params.offset.map(|x| x.into())).into_inner();
-
-    let transfers = state
+    let balance = state
         .db
-        .address_location_to_transfer
-        .range(&from..&to, false)
-        .filter(|(_, v)| v.tick == tick)
-        .map(|(k, v)| TokenTransfer {
-            amount: v.amt,
-            outpoint: k.location.outpoint.into(),
-        })
-        .skip(params.offset.is_some() as usize)
-        .take(params.limit)
-        .collect_vec();
+        .address_token_to_balance
+        .get(AddressToken { address: scripthash, token })
+        .not_found("Token balance not found for address")?;
+
+    let transfers = address_token_transfers(&state.db, scripthash, token, params.offset, params.limit);
 
     let data = types::TokenBalance {
         transfers,
-        tick: tick.into(),
+        tick: token.into(),
         balance: balance.balance,
         transferable_balance: balance.transferable_balance,
         transfers_count: balance.transfers_count,
@@ -151,12 +159,25 @@ pub async fn address_tokens(
         })
         .skip(params.offset.is_some() as usize)
         .take(params.limit)
-        .map(|(k, v)| types::TokenBalance {
-            tick: k.token.into(),
-            balance: v.balance,
-            transferable_balance: v.transferable_balance,
-            transfers_count: v.transfers_count,
-            transfers: vec![],
+        .map(|(k, v)| {
+            let transfers = if v.transfers_count > 0 {
+                address_token_transfers(
+                    &state.db,
+                    scripthash,
+                    k.token,
+                    None,
+                    v.transfers_count.min(params.limit as u64) as usize,
+                )
+            } else {
+                vec![]
+            };
+            types::TokenBalance {
+                tick: k.token.into(),
+                balance: v.balance,
+                transferable_balance: v.transferable_balance,
+                transfers_count: v.transfers_count,
+                transfers,
+            }
         })
         .collect_vec();
 

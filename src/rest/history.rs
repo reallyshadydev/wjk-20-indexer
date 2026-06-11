@@ -98,11 +98,7 @@ pub async fn address_token_history(
 
     let scripthash: FullHash = server.indexer.to_scripthash(&script_str, ScriptType::Address).bad_request_from_error()?.into();
 
-    let token: LowerCaseTokenTick = query.tick.into();
-
-    let deploy_proto = server.db.token_to_meta.get(&token).not_found("Token not found")?;
-
-    let token = deploy_proto.proto.tick;
+    let token: OriginalTokenTick = query.tick.into();
 
     let from = AddressTokenIdDB {
         address: scripthash,
